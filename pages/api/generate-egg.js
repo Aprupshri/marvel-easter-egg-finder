@@ -1,10 +1,11 @@
 // This code runs ONLY on the server. It is never sent to the user's browser.
 // This is our secure backend where the API key and prompts are hidden.
 
-// The allowed origin is your Vercel deployment URL.
-const allowedOrigin = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+const allowedOrigins = [
+  "http://localhost:3000", // local dev
+  process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`, // preview/prod deployments
+  "https://marvel-easter-egg-finder.vercel.app", // explicitly allow your main domain
+].filter(Boolean);
 
 // A more generic helper function to call different Gemini models.
 async function callGeminiAPI(payload, model) {
@@ -38,10 +39,15 @@ async function callGeminiAPI(payload, model) {
 export default async function handler(req, res) {
   // Security Layer 1: CORS Protection
   const origin = req.headers.origin;
-  if (origin && origin !== allowedOrigin) {
+
+  if (origin && !allowedOrigins.includes(origin)) {
     return res.status(403).json({ error: "Forbidden" });
   }
-  res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
+
+  // Only echo back the requesting origin (not the whole array!)
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
 
   // Security Layer 2: Method & Preflight Handling
   if (req.method === "OPTIONS") {
@@ -49,6 +55,7 @@ export default async function handler(req, res) {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     return res.status(200).end();
   }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
@@ -75,7 +82,7 @@ export default async function handler(req, res) {
           systemInstruction: {
             parts: [
               {
-                text: `You are a Marvel Cinematic Universe expert. Your task is to find a single, specific, and verifiable Easter egg based on a user's query. You must respond ONLY with a JSON object in the format \`{\"title\": \"A short, catchy title for the Easter egg\", \"description\": \"A detailed paragraph describing the Easter egg, the scene it appears in, and its significance.\"}\`. Do not include any other text, greetings, or explanations outside of the JSON object. If you cannot find a specific Easter egg for the query, respond with the JSON object \`{\"error\": \"I could not find a specific Easter egg for that term in my database. Try being more specific or using a different keyword.\"}\`.`,
+                text: `You are a Marvel Cinematic Universe expert. Your task is to find a single, specific, and verifiable Easter egg based on a user's query. You must respond ONLY with a JSON object in the format \`{"title": "A short, catchy title for the Easter egg", "description": "A detailed paragraph describing the Easter egg, the scene it appears in, and its significance."}\`. Do not include any other text, greetings, or explanations outside of the JSON object. If you cannot find a specific Easter egg for the query, respond with the JSON object \`{"error": "I could not find a specific Easter egg for that term in my database. Try being more specific or using a different keyword."}\`.`,
               },
             ],
           },
@@ -91,7 +98,7 @@ export default async function handler(req, res) {
           systemInstruction: {
             parts: [
               {
-                text: "You are a friendly comic book expert. Explain the following movie Easter egg in a simple and fun way. Keep it to one short paragraphs.",
+                text: "You are a friendly comic book expert. Explain the following movie Easter egg in a simple and fun way. Keep it to one short paragraph.",
               },
             ],
           },
