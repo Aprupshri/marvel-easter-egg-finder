@@ -1,9 +1,11 @@
 import "../styles/globals.css";
 import Head from "next/head";
+import { Analytics } from "@vercel/analytics/next";
 
 function MyApp({ Component, pageProps }) {
   return (
     <>
+      <Analytics />
       <Head>
         <title>Marvel Easter Eggs Finder</title>
         <meta
