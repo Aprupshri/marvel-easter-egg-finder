@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-
+import Link from "next/link";
 // This is the main user interface, built as a React Component.
 // It manages all the visual elements and user interactions.
 export default function HomePage() {
@@ -331,6 +331,14 @@ export default function HomePage() {
               </button>
             </div>
           )}
+        </div>
+        <div className="mt-8 text-center">
+          <Link
+            href="/quiz"
+            className="text-blue-300 hover:text-white underline text-lg"
+          >
+            Go to Marvel Quiz Arena
+          </Link>
         </div>
       </div>
     </div>

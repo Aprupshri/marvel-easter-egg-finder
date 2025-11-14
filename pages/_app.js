@@ -1,8 +1,17 @@
+// pages/_app.js
 import "../styles/globals.css";
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/next";
+import { useEffect } from "react";
+import { auth } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 function MyApp({ Component, pageProps }) {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, () => {});
+    return () => unsubscribe();
+  }, []);
+
   return (
     <>
       <Analytics />
