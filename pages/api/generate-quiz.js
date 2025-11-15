@@ -1,5 +1,7 @@
 // pages/api/generate-quiz.js
+import { doc, setDoc } from "@firebase/firestore";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { db } from "../../firebase";
 
 const allowedOrigins = [
   "http://localhost:3000",
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const model = "gemini-2.5-flash-preview-05-20";
+    const model = "gemini-2.0-flash";
     const payload = {
       contents: [
         {
@@ -84,8 +86,14 @@ Return ONLY the JSON array of 5 questions, no markdown, no extra text.`,
     const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
     const cleanedText = responseText.replace(/```json\n?|```/g, "").trim();
     const quiz = JSON.parse(cleanedText);
+    const quizId = Date.now().toString();
+    // Save the full quiz with questions
+    await setDoc(doc(db, "quizzes", quizId), {
+      quiz,
+      createdAt: new Date(),
+    });
 
-    return res.status(200).json({ quiz });
+    return res.status(200).json({ quiz, quizId });
   } catch (error) {
     console.error("Error in generate-quiz:", error);
     return res.status(500).json({ error: "Failed to generate quiz." });

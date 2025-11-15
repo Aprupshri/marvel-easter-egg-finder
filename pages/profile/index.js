@@ -114,7 +114,7 @@ export default function ProfilePage() {
             </div>
             <div className="391 bg-gray-800 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-blue-300 mb-2">Quizzes Played</h3>
-              <p className="text-4xl font-black text-white">{stats.quizzes}</p>
+              <p className="text-4xl font-black text-white">{stats.quizzes.length}</p>
             </div>
           </div>
 

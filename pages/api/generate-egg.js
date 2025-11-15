@@ -58,7 +58,7 @@ export default async function handler(req, res) {
   try {
     let payload;
     let result;
-    const textModel = "gemini-2.5-flash-preview-05-20";
+    const textModel = "gemini-2.0-flash";
     const audioModel = "gemini-2.5-flash-preview-tts";
 
     switch (action) {

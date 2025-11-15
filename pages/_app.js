@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { useEffect } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { Toaster } from "sonner";
 
 function MyApp({ Component, pageProps }) {
   useEffect(() => {
@@ -15,6 +16,7 @@ function MyApp({ Component, pageProps }) {
   return (
     <>
       <Analytics />
+      <Toaster/>
       <Head>
         <title>Marvel Easter Eggs Finder</title>
         <meta

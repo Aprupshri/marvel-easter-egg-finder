@@ -1,17 +1,23 @@
 // pages/quiz/index.js
 import { useState, useEffect } from "react";
-import { db } from "../../firebase";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { db, auth } from "../../firebase";
+import { collection, query, orderBy, limit, getDocs, getDoc, doc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import QuizPlayer from "../../components/QuizPlayer";
 import Navbar from "../../components/Navbar";
-import Link from "next/link";
 
 export default function QuizArena() {
+  const [user, setUser] = useState(null);
   const [quiz, setQuiz] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [quizId, setQuizId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [globalLeaderboard, setGlobalLeaderboard] = useState([]);
   const [quizLeaderboard, setQuizLeaderboard] = useState([]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, setUser);
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     fetchGlobalLeaderboard();
@@ -32,21 +38,26 @@ export default function QuizArena() {
     const q = query(collection(db, "quizzes", quizId, "plays"), orderBy("score", "desc"), limit(10));
     const snap = await getDocs(q);
     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const enriched = await Promise.all(data.map(async (entry) => {
-      if (entry.id === "anonymous") return { ...entry, name: "Anonymous" };
-      const userDoc = await getDoc(doc(db, "users", entry.id));
-      return { ...entry, name: userDoc.data()?.name || "Unknown" };
-    }));
+    const enriched = await Promise.all(
+      data.map(async (entry) => {
+        if (entry.id === "anonymous") return { ...entry, name: "Anonymous" };
+        const userDoc = await getDoc(doc(db, "users", entry.id));
+        return { ...entry, name: userDoc.data()?.name || "Unknown" };
+      })
+    );
     setQuizLeaderboard(enriched);
   };
 
   const generateQuiz = async () => {
+    if (!user) {
+      alert("Please log in to play");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/generate-quiz", { method: "POST" });
-      const { quiz } = await res.json();
-      const id = Date.now().toString();
-      setQuizId(id);
+      const { quiz, quizId } = await res.json();
+      setQuizId(quizId);
       setQuiz(quiz);
     } catch (e) {
       alert("Failed to generate quiz");
@@ -56,15 +67,29 @@ export default function QuizArena() {
   };
 
   const handleQuizComplete = async (score) => {
-    if (quizId) {
+    if (!user || !quizId) return;
+
+    try {
       await fetch("/api/save-quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quizId, score }),
+        body: JSON.stringify({
+          quizId,
+          score,
+          userId: user.uid,
+          userName: user.displayName || "Guest",
+        }),
       });
       fetchQuizLeaderboard();
       fetchGlobalLeaderboard();
+    } catch (error) {
+      console.error("Failed to save quiz:", error);
     }
+  };
+
+  const clearQuiz = () => {
+    setQuiz(null);
+    setQuizId(null);
   };
 
   return (
@@ -89,7 +114,12 @@ export default function QuizArena() {
             </div>
           ) : (
             <>
-              <QuizPlayer quiz={quiz} onComplete={handleQuizComplete} />
+              <QuizPlayer 
+                quiz={quiz} 
+                onComplete={handleQuizComplete} 
+                clearQuiz={clearQuiz}
+                shareUrl={`/quiz/${quizId}`}
+              />
 
               {quizLeaderboard.length > 0 && (
                 <div className="mt-12 bg-gray-800 rounded-xl p-6">

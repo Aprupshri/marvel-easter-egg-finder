@@ -1,8 +1,9 @@
 // pages/quiz/[id].js
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
-import { db } from "../../firebase";
+import { db, auth } from "../../firebase";
 import { doc, getDoc, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import QuizPlayer from "../../components/QuizPlayer";
 import Navbar from "../../components/Navbar";
 
@@ -10,7 +11,14 @@ export default function SharedQuiz() {
   const router = useRouter();
   const { id } = router.query;
   const [quizData, setQuizData] = useState(null);
+  const [user, setUser] = useState(null);
+  const [hasPlayed, setHasPlayed] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, setUser);
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -18,7 +26,14 @@ export default function SharedQuiz() {
         const docRef = doc(db, "quizzes", id);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          setQuizData(snap.data());
+          const data = snap.data();
+          setQuizData(data);
+
+          if (user && !user.isAnonymous) {
+            const playRef = doc(db, "quizzes", id, "plays", user.uid);
+            const playSnap = await getDoc(playRef);
+            setHasPlayed(playSnap.exists());
+          }
         } else {
           alert("Quiz not found");
           router.push("/quiz");
@@ -26,7 +41,7 @@ export default function SharedQuiz() {
       };
       fetchQuiz();
     }
-  }, [id, router]);
+  }, [id, user, router]);
 
   useEffect(() => {
     if (id) fetchLeaderboard();
@@ -36,12 +51,35 @@ export default function SharedQuiz() {
     const q = query(collection(db, "quizzes", id, "plays"), orderBy("score", "desc"), limit(10));
     const snap = await getDocs(q);
     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const enriched = await Promise.all(data.map(async (entry) => {
-      if (entry.id === "anonymous") return { ...entry, name: "Anonymous" };
-      const userDoc = await getDoc(doc(db, "users", entry.id));
-      return { ...entry, name: userDoc.data()?.name || "Unknown" };
-    }));
+    const enriched = await Promise.all(
+      data.map(async (entry) => {
+        if (entry.id === "anonymous") return { ...entry, name: "Anonymous" };
+        const userDoc = await getDoc(doc(db, "users", entry.id));
+        return { ...entry, name: userDoc.data()?.name || "Unknown" };
+      })
+    );
     setLeaderboard(enriched);
+  };
+
+  const handleQuizComplete = async (score) => {
+    if (!user || user.isAnonymous || hasPlayed) return;
+
+    try {
+      await fetch("/api/save-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizId: id,
+          score,
+          userId: user.uid,
+          userName: user.displayName || "Guest",
+
+        }),
+      });
+      fetchLeaderboard();
+    } catch (error) {
+      console.error("Failed to save shared quiz:", error);
+    }
   };
 
   if (!quizData) {
@@ -62,13 +100,18 @@ export default function SharedQuiz() {
         <div className="max-w-2xl mx-auto pt-20">
           <header className="text-center mb-8">
             <h1 className="text-4xl font-black text-white">Shared Quiz Challenge</h1>
-            <p className="text-blue-200 mt-2">Best score: {quizData.score}/{quizData.quiz.length}</p>
+            <p className="text-blue-200 mt-2">Best score: {quizData.score || 0}/{quizData.quiz.length}</p>
+            {user && !user.isAnonymous && hasPlayed && (
+              <p className="text-yellow-400 mt-2">You've already played this quiz!</p>
+            )}
           </header>
 
           <QuizPlayer
             quiz={quizData.quiz}
-            initialScore={quizData.score}
+            initialScore={quizData.score || 0}
             isShared={true}
+            onComplete={handleQuizComplete}
+            shareUrl={typeof window !== "undefined" ? window.location.href : ""}
           />
 
           <div className="mt-12 bg-gray-800 rounded-xl p-6">
