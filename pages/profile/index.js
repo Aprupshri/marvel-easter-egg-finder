@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, where, orderBy, limit, getDocs, doc, getDoc } from "firebase/firestore";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
 
@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const fetchProfileData = async (uid) => {
     setLoading(true);
     try {
+      // Fetch user stats
       const userRef = doc(db, "users", uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
@@ -34,31 +35,32 @@ export default function ProfilePage() {
         setStats({ totalScore: data.totalScore || 0, quizzes: data.quizzes || 0 });
       }
 
-      const playsQuery = query(
-        collection(db, "quizzes"),
-        where("userId", "==", uid),
-        orderBy("timestamp", "desc"),
-        limit(20)
-      );
-      const playsSnap = await getDocs(playsQuery);
-      const historyData = await Promise.all(
-        playsSnap.docs.map(async (playDoc) => {
-          const playData = playDoc.data();
-          const quizId = playDoc.id;
-
-          const playRef = doc(db, "quizzes", quizId, "plays", uid);
-          const playSnap = await getDoc(playRef);
-          const score = playSnap.exists() ? playSnap.data().score : playData.score;
-
-          return {
+      // Query all quiz documents that have a subcollection "plays" with user's UID
+      const quizzesRef = collection(db, "quizzes");
+      const quizzesSnap = await getDocs(quizzesRef);
+      
+      const historyData = [];
+      for (const quizDoc of quizzesSnap.docs) {
+        const quizId = quizDoc.id;
+        const playRef = doc(db, "quizzes", quizId, "plays", uid);
+        const playSnap = await getDoc(playRef);
+        
+        if (playSnap.exists()) {
+          const playData = playSnap.data();
+          const quizData = quizDoc.data();
+          
+          historyData.push({
             id: quizId,
-            score,
-            total: playData.quiz.length,
-            timestamp: playData.timestamp.toDate(),
-          };
-        })
-      );
-      setHistory(historyData);
+            score: playData.score,
+            total: quizData.quiz?.length || 0,
+            timestamp: playData.timestamp?.toDate() || new Date(),
+          });
+        }
+      }
+
+      // Sort by timestamp desc and limit to 20
+      historyData.sort((a, b) => b.timestamp - a.timestamp);
+      setHistory(historyData.slice(0, 20));
     } catch (e) {
       console.error("Failed to load profile:", e);
     } finally {
@@ -112,7 +114,7 @@ export default function ProfilePage() {
               <h3 className="text-xl font-bold text-blue-300 mb-2">Total Score</h3>
               <p className="text-4xl font-black text-white">{stats.totalScore}</p>
             </div>
-            <div className="391 bg-gray-800 rounded-xl p-6 text-center">
+            <div className="bg-gray-800 rounded-xl p-6 text-center">
               <h3 className="text-xl font-bold text-blue-300 mb-2">Quizzes Played</h3>
               <p className="text-4xl font-black text-white">{stats.quizzes.length}</p>
             </div>
