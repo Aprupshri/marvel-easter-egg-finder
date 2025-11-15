@@ -1,13 +1,12 @@
-// This code runs ONLY on the server. It is never sent to the user's browser.
-// This is our secure backend where the API key and prompts are hidden.
+// pages/api/generate-egg.js
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const allowedOrigins = [
-  "http://localhost:3000", // local dev
-  process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`, // preview/prod deployments
-  "https://marvel-easter-egg-finder.vercel.app", // explicitly allow your main domain
+  "http://localhost:3000",
+  process.env.VERCEL_URL && `https://${process.env.VERCEL_URL}`,
+  "https://marvel-easter-egg-finder.vercel.app",
 ].filter(Boolean);
 
-// A more generic helper function to call different Gemini models.
 async function callGeminiAPI(payload, model) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
@@ -35,21 +34,15 @@ async function callGeminiAPI(payload, model) {
   }
 }
 
-// The main function that handles all incoming requests to /api/generate-egg
 export default async function handler(req, res) {
-  // Security Layer 1: CORS Protection
   const origin = req.headers.origin;
-
   if (origin && !allowedOrigins.includes(origin)) {
     return res.status(403).json({ error: "Forbidden" });
   }
-
-  // Only echo back the requesting origin (not the whole array!)
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
   }
 
-  // Security Layer 2: Method & Preflight Handling
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -60,13 +53,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Core Logic
   const { action, query, context } = req.body;
 
   try {
     let payload;
     let result;
-    const textModel = "gemini-2.5-flash-preview-05-20";
+    const textModel = "gemini-2.0-flash";
     const audioModel = "gemini-2.5-flash-preview-tts";
 
     switch (action) {
