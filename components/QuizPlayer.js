@@ -3,6 +3,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 
+const FUNNY_MESSAGES = {
+  0: "Zero? Did you even *try*? The MCU is calling — and it wants its popcorn back!",
+  1: "One point? That's not a score, that's a participation sticker. Go rewatch *Iron Man* and try again.",
+  2: "Two out of five? You're basically the MCU's version of a background character in a crowd scene.",
+  3: "Three correct? Not bad — you're officially promoted from 'random civilian' to 'S.H.I.E.L.D. intern'.",
+  4: "Four out of five? So close! You're one question away from being invited to the Avengers compound.",
+  5: "PERFECT SCORE! You're not a fan — you're a *walking Marvel wiki*. Even Kevin Feige is taking notes.",
+};
+
 export default function QuizPlayer({
   quiz,
   initialScore = null,
@@ -43,9 +52,17 @@ export default function QuizPlayer({
     if (onComplete) onComplete(correct);
   };
 
+  const retryQuiz = () => {
+    setCurrent(0);
+    setAnswers(new Array(quiz.length).fill(undefined));
+    setShowResult(false);
+    setScore(0);
+  };
+
   const completeUrl = window.location.origin + shareUrl;
   const shareOnTwitter = () => {
-    const text = `I just scored ${score}/${quiz.length} on a Marvel Quiz! Can you beat me?`;
+    const message = FUNNY_MESSAGES[score] || "I just took a Marvel Quiz!";
+    const text = `I scored ${score}/${quiz.length}! "${message}" Can you beat me?`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
     )}&url=${encodeURIComponent(completeUrl)}`;
@@ -64,6 +81,8 @@ export default function QuizPlayer({
     toast.success("Link copied to clipboard!");
   };
 
+  const funnyMessage = FUNNY_MESSAGES[score] || "Nice try! Keep training, hero.";
+
   if (!showResult) {
     return (
       <div className="bg-gray-800 rounded-xl p-6 shadow-2xl">
@@ -71,9 +90,6 @@ export default function QuizPlayer({
           <span>
             Question {current + 1}/{quiz.length}
           </span>
-          {/* <span>
-            Score: {answers.filter((a, i) => a === quiz[i].correct).length}
-          </span> */}
         </div>
         <h3 className="text-xl font-bold text-blue-300 mb-6">
           {quiz[current].question}
@@ -107,18 +123,20 @@ export default function QuizPlayer({
   return (
     <div className="bg-gray-800 rounded-xl p-8 text-center">
       <h2 className="text-3xl font-bold text-green-400 mb-4">Quiz Complete!</h2>
-      <p className="text-2xl text-white mb-6">
-        Your score:{" "}
-        <strong>
-          {score}/{quiz.length}
-        </strong>
+      <p className="text-2xl text-white mb-2">
+        Your score: <strong>{score}/{quiz.length}</strong>
       </p>
-      {initialScore !== null && (
+      <p className="text-lg text-yellow-300 italic mb-6 max-w-2xl mx-auto">
+        "{funnyMessage}"
+      </p>
+
+      {initialScore !== null && initialScore > score && (
         <p className="text-yellow-400 mb-6">
           Best score: {initialScore}/{quiz.length}
         </p>
       )}
-      <div className="flex justify-center gap-4 mb-6">
+
+      <div className="flex justify-center gap-4 mb-6 flex-wrap">
         <button
           onClick={shareOnTwitter}
           className="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2"
@@ -158,13 +176,22 @@ export default function QuizPlayer({
         </button>
       </div>
 
-      <Link
-        onClick={clearQuiz}
-        href="/quiz"
-        className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg inline-block"
-      >
-        Back to Quiz Arena
-      </Link>
+      <div className="flex justify-center gap-4">
+        <button
+          onClick={retryQuiz}
+          className="bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-6 rounded-lg"
+        >
+          Retry Quiz
+        </button>
+
+        <Link
+          onClick={clearQuiz}
+          href="/quiz"
+          className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg"
+        >
+          Back to Quiz Arena
+        </Link>
+      </div>
     </div>
   );
 }

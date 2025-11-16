@@ -17,3 +17,13 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 export const signInAnon = () => signInAnonymously(auth);
+
+// Export actionCodeSettings safely for client-side use only
+export const getActionCodeSettings = () => {
+  if (typeof window === "undefined") {
+    return null; // Return null on server
+  }
+  return {
+    url: `${window.location.origin}/quiz`,
+  };
+};

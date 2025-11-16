@@ -1,6 +1,17 @@
 // pages/api/generate-quiz.js
 import { db } from "../../firebase";
-import { doc, setDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  limit,
+  orderBy,
+  getDoc,
+} from "firebase/firestore";
+import { adminAuth } from "../../firebaseAdmin";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -11,7 +22,10 @@ async function callGeminiAPI(payload) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+  }
   return response.json();
 }
 
@@ -29,22 +43,60 @@ async function getUsedQuestions() {
   return questions;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+async function getUserPlayedQuizIds(userId) {
+  // CORRECT: Use your actual subcollection name
+  const snap = await getDoc(doc(db, "users", userId));
+  return snap.exists() ? snap.data().quizzes : [];
+}
+
+async function getAvailableQuiz(userId) {
+  const playedIds = await getUserPlayedQuizIds(userId);
+  const playedSet = new Set(playedIds);
+
+  if (playedSet.size === 0) {
+    // console.log("[DEBUG] User has no played quizzes. Returning oldest.");
+    const oldestQuery = query(
+      collection(db, "quizzes"),
+      orderBy("createdAt", "asc"),
+      limit(1)
+    );
+    const snap = await getDocs(oldestQuery);
+    if (!snap.empty) {
+      const doc = snap.docs[0];
+      // console.log(`[DEBUG] Returning oldest quiz: ${doc.id}`);
+      return { id: doc.id, ...doc.data() };
+    }
   }
 
-  try {
-    const usedQuestions = await getUsedQuestions();
-    const excludeList = Array.from(usedQuestions).slice(0, 50); // Limit context size
+  // console.log(
+  //   `[DEBUG] User has played ${playedSet.size} quizzes. Finding unplayed...`
+  // );
+  const allQuizzesQuery = query(
+    collection(db, "quizzes"),
+    orderBy("createdAt", "desc")
+  );
+  const allSnap = await getDocs(allQuizzesQuery);
+  for (const doc of allSnap.docs) {
+    if (!playedSet.has(doc.id)) {
+      // console.log(`[DEBUG] Found unplayed quiz: ${doc.id}`);
+      return { id: doc.id, ...doc.data() };
+    }
+  }
 
-    const model = "gemini-2.0-flash";
-    const payload = {
-      contents: [
-        {
-          parts: [
-            {
-              text: `Generate a 5-question Marvel Cinematic Universe quiz in JSON format.
+  // console.log("[DEBUG] No unplayed quizzes found. Generating new one.");
+  return null;
+}
+
+async function generateNewQuiz() {
+  const usedQuestions = await getUsedQuestions();
+  const excludeList = Array.from(usedQuestions).slice(0, 50);
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          {
+            text: `Generate a 5-question Marvel Cinematic Universe quiz in JSON format.
 Each question must have:
 - question (string)
 - options (array of 4 strings)
@@ -55,64 +107,107 @@ Return ONLY the JSON array of 5 questions, no markdown, no extra text.
 IMPORTANT: NONE of these questions can be similar to or repeat any of the following used questions:
 ${excludeList.map((q, i) => `${i + 1}. "${q}"`).join("\n") || "None yet."}
 
-Make questions moderately difficult — avoid overly easy ones like "Who played Iron Man?" or "What color is Hulk?"`,
-            },
-          ],
-        },
-      ],
-      systemInstruction: {
-        parts: [
-          {
-            text: `You are a Marvel Cinematic Universe trivia expert. Create exactly 5 unique, moderately difficult multiple-choice questions about MCU movies, characters, scenes, Easter eggs, or plot details. Each question must have exactly 4 options and exactly one correct answer. 
-
-CRITICAL: Do NOT repeat or closely rephrase any question from the user's "used questions" list. Generate fresh, original questions only.
-
-Output must be a valid JSON array of objects with keys: question, options, correct. No explanations, no markdown, no additional text.`,
+Make questions moderately difficult — avoid overly easy ones.`,
           },
         ],
       },
-    };
+    ],
+    systemInstruction: {
+      parts: [
+        {
+          text: `You are a Marvel Cinematic Universe trivia expert. Create exactly 5 unique, moderately difficult multiple-choice questions. Each must have exactly 4 options and one correct answer.
 
-    let quiz;
-    let attempts = 0;
-    const maxAttempts = 3;
+CRITICAL: Do NOT repeat or rephrase any question from the used list.
 
-    while (attempts < maxAttempts) {
-      const result = await callGeminiAPI(payload);
-      const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!responseText) throw new Error("Empty response from Gemini");
+Output: valid JSON array of objects with keys: question, options, correct. No extra text.`,
+        },
+      ],
+    },
+  };
 
-      const cleanedText = responseText.replace(/```json\n?|```/g, "").trim();
-      try {
-        quiz = JSON.parse(cleanedText);
-        if (!Array.isArray(quiz) || quiz.length !== 5) throw new Error("Invalid format");
+  let quiz;
+  let attempts = 0;
+  const maxAttempts = 3;
 
-        // Validate uniqueness
-        const hasDuplicate = quiz.some((q) => {
-          const norm = q.question.toLowerCase().trim();
-          return usedQuestions.has(norm);
-        });
+  while (attempts < maxAttempts) {
+    const result = await callGeminiAPI(payload);
+    const responseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!responseText) throw new Error("Empty response");
 
-        if (!hasDuplicate) break;
-      } catch (e) {
-        console.warn("Parse/validation failed, retrying...", e);
-      }
-      attempts++;
+    const cleanedText = responseText.replace(/```json\n?|```/g, "").trim();
+    try {
+      quiz = JSON.parse(cleanedText);
+      if (!Array.isArray(quiz) || quiz.length !== 5)
+        throw new Error("Invalid format");
+
+      const hasDuplicate = quiz.some((q) => {
+        const norm = q.question.toLowerCase().trim();
+        return usedQuestions.has(norm);
+      });
+
+      if (!hasDuplicate) break;
+    } catch (e) {
+      console.warn("Parse/validation failed, retrying...", e);
+    }
+    attempts++;
+  }
+
+  if (!quiz || quiz.length !== 5) {
+    throw new Error("Failed to generate unique quiz after retries.");
+  }
+
+  const quizId = Date.now().toString();
+  await setDoc(doc(db, "quizzes", quizId), {
+    quiz,
+    createdAt: new Date(),
+  });
+
+  return { quiz, quizId };
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const idToken = authHeader.split("Bearer ")[1];
+
+  let userId;
+  try {
+    const decoded = await adminAuth.verifyIdToken(idToken);
+    userId = decoded.uid;
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return res.status(401).json({ error: "Invalid token" });
+  }
+
+  try {
+    const existing = await getAvailableQuiz(userId);
+    if (existing) {
+      return res.status(200).json({
+        quiz: existing.quiz,
+        quizId: existing.id,
+        reused: true,
+      });
     }
 
-    if (!quiz || quiz.length !== 5) {
-      return res.status(500).json({ error: "Failed to generate unique quiz after retries." });
-    }
+    const { quiz, quizId } = await generateNewQuiz();
 
-    const quizId = Date.now().toString();
-    await setDoc(doc(db, "quizzes", quizId), {
+    return res.status(200).json({
       quiz,
-      createdAt: new Date(),
+      quizId,
+      reused: false,
     });
-
-    return res.status(200).json({ quiz, quizId });
   } catch (error) {
     console.error("Error in generate-quiz:", error);
-    return res.status(500).json({ error: "Failed to generate quiz." });
+    return res.status(500).json({
+      error: "Failed to get quiz.",
+      details: error.message,
+    });
   }
 }

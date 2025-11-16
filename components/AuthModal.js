@@ -1,23 +1,22 @@
 // components/AuthModal.js
 import { useState, useEffect } from "react";
-import { auth } from "../firebase";
+import { auth, getActionCodeSettings } from "../firebase";
 import {
   signInWithPopup,
   GoogleAuthProvider,
   signInAnonymously,
   linkWithPopup,
+  linkWithCredential,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   sendEmailVerification,
   reload,
+  EmailAuthProvider,
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 
 const googleProvider = new GoogleAuthProvider();
-const actionCodeSettings = {
-  url: `${window.location.origin}/quiz`,
-};
 
 export default function AuthModal({ onClose, showLogout, onLogout }) {
   const [loading, setLoading] = useState(false);
@@ -47,8 +46,11 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
   }, [resendTimer]);
 
   const sendVerificationEmail = async (user) => {
+    const settings = getActionCodeSettings();
+    if (!settings) return; // Safety check
+
     try {
-      await sendEmailVerification(user, actionCodeSettings);
+      await sendEmailVerification(user, settings);
       setVerificationSent(true);
       setResendTimer(60);
     } catch (error) {
@@ -98,6 +100,51 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
         setError("Authentication failed. Please try again.");
       }
       console.error("Email auth error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const linkAnonymousWithEmail = async (e) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError("Please fill in both email and password");
+      return;
+    }
+    if (!currentUser?.isAnonymous) return;
+
+    setLoading(true);
+    setError("");
+    try {
+      const credential = EmailAuthProvider.credential(email, password);
+      const result = await linkWithCredential(currentUser, credential);
+      const linkedUser = result.user;
+
+      const anonDoc = await getDoc(doc(db, "users", currentUser.uid));
+      const anonData = anonDoc.exists() ? anonDoc.data() : { totalScore: 0, quizzes: [] };
+
+      await setDoc(doc(db, "users", linkedUser.uid), {
+        userName: email.split("@")[0],
+        email: linkedUser.email,
+        totalScore: anonData.totalScore || 0,
+        quizzes: anonData.quizzes || [],
+      }, { merge: true });
+
+      if (!linkedUser.emailVerified) {
+        await sendVerificationEmail(linkedUser);
+      }
+
+      alert("Progress saved! You're now signed in with email.");
+      onClose();
+    } catch (error) {
+      if (error.code === "auth/email-already-in-use") {
+        setError("This email is already linked to another account.");
+      } else if (error.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters.");
+      } else {
+        setError("Failed to link account. Try again.");
+        console.error("Link email error:", error);
+      }
     } finally {
       setLoading(false);
     }
@@ -170,6 +217,7 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
       }, { merge: true });
 
       alert("Progress saved! You're now signed in with Google.");
+      onClose();
     } catch (error) {
       if (error.code === "auth/credential-already-in-use") {
         alert("This Google account is already in use.");
@@ -178,7 +226,6 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
       }
     } finally {
       setLoading(false);
-      onClose();
     }
   };
 
@@ -272,7 +319,42 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
                 Guest mode: Your progress will be lost when you leave.
               </p>
             </div>
-            
+
+            <form onSubmit={linkAnonymousWithEmail} className="mb-4">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                disabled={loading}
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password (6+ chars)"
+                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                disabled={loading}
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition"
+              >
+                {loading ? "Saving..." : "Save with Email"}
+              </button>
+            </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-800 text-gray-400">or</span>
+              </div>
+            </div>
+
             <button
               onClick={linkAnonymousAccount}
               disabled={loading}
@@ -283,6 +365,7 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
               </svg>
               {loading ? "Saving..." : "Save with Google"}
             </button>
+
             <button
               onClick={onClose}
               disabled={loading}
@@ -296,7 +379,7 @@ export default function AuthModal({ onClose, showLogout, onLogout }) {
             <p className="text-green-400 mb-4">
               Signed in as <strong>{currentUser.displayName || currentUser.email}</strong>
             </p>
-            {!currentUser.emailVerified && currentUser.providerData[0]?.providerId === "password" && (
+            {!currentUser.emailVerified && currentUser.providerData.some(p => p.providerId === "password") && (
               <button
                 onClick={resendVerification}
                 disabled={loading || resendTimer > 0}
