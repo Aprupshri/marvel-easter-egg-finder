@@ -31,15 +31,19 @@ export default async function handler(req, res) {
       scoreToAdd = score - previousScore; // Only add difference
     }
 
+    const quizzes = Array.isArray(userData.quizzes)
+      ? [...userData.quizzes, quizId]
+      : [quizId];
+    // console.log(quizzes);
+
+    const finalUserName = getMarvelName(userData.userName || userName);
     if (scoreToAdd > 0) {
       await setDoc(
         userRef,
         {
-          userName: getMarvelName(userData.userName || userName),
+          userName: finalUserName,
           totalScore: userData.totalScore + scoreToAdd,
-          quizzes: Array.isArray(userData.quizzes)
-            ? [...userData.quizzes, quizId]
-            : [quizId],
+          quizzes,
         },
         { merge: true }
       );

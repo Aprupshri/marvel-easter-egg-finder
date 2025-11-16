@@ -91,37 +91,39 @@ export default function QuizArena() {
     setQuizLeaderboard(enriched);
   };
 
- // pages/quiz/index.js (update generateQuiz function)
-const generateQuiz = async () => {
-  if (!user) {
-    toast.error("Please log in to play");
-    return;
-  }
-  setLoading(true);
-  try {
-    const idToken = await user.getIdToken();
-    const res = await fetch("/api/generate-quiz", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    setQuizId(data.quizId);
-    setQuiz(data.quiz);
-    // Mark as played locally (optional UI feedback)
-    if (!data.reused) {
-      toast.success("Fresh quiz generated!");
+  // pages/quiz/index.js (update generateQuiz function)
+  const generateQuiz = async () => {
+    if (!user) {
+      toast.error("Please log in to play");
+      return;
     }
-  } catch (e) {
-    toast.error("Failed to load quiz");
-    console.error(e);
-  } finally {
-    setLoading(false);
-  }
-};
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/generate-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+
+        body: JSON.stringify({  
+          userId: user.uid,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setQuizId(data.quizId);
+      setQuiz(data.quiz);
+      // Mark as played locally (optional UI feedback)
+      if (!data.reused) {
+        toast.success("Fresh quiz generated!");
+      }
+    } catch (e) {
+      toast.error("Failed to load quiz");
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleQuizComplete = async (score) => {
     if (!user || !quizId) return;
@@ -162,7 +164,7 @@ const generateQuiz = async () => {
               <p className="text-blue-200 mt-2">Test your MCU knowledge!</p>
             </header>
 
-            {!quiz ? (
+            {(!quiz || !user) ? (
               <div className="text-center">
                 <button
                   onClick={generateQuiz}

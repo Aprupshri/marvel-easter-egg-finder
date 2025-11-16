@@ -11,7 +11,7 @@ import {
   orderBy,
   getDoc,
 } from "firebase/firestore";
-import { adminAuth } from "../../firebaseAdmin";
+// import { adminAuth } from "../../firebaseAdmin";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -73,7 +73,7 @@ async function getAvailableQuiz(userId) {
   // );
   const allQuizzesQuery = query(
     collection(db, "quizzes"),
-    orderBy("createdAt", "desc")
+    orderBy("createdAt", "asc")
   );
   const allSnap = await getDocs(allQuizzesQuery);
   for (const doc of allSnap.docs) {
@@ -170,21 +170,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  // const authHeader = req.headers.authorization;
+  // if (!authHeader?.startsWith("Bearer ")) {
+  //   return res.status(401).json({ error: "Unauthorized" });
+  // }
 
-  const idToken = authHeader.split("Bearer ")[1];
+  // const idToken = authHeader.split("Bearer ")[1];
 
-  let userId;
-  try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    userId = decoded.uid;
-  } catch (error) {
-    console.error("Token verification failed:", error);
-    return res.status(401).json({ error: "Invalid token" });
-  }
+  let {userId} = req.body;
+  // try {
+  //   const decoded = await adminAuth.verifyIdToken(idToken);
+  //   userId = decoded.uid;
+  // } catch (error) {
+  //   console.error("Token verification failed:", error);
+  //   return res.status(401).json({ error: "Invalid token" });
+  // }
 
   try {
     const existing = await getAvailableQuiz(userId);
