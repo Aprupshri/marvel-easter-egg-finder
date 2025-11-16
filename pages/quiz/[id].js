@@ -14,6 +14,7 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import QuizPlayer from "../../components/QuizPlayer";
 import Navbar from "../../components/Navbar";
+import { toast } from "sonner";
 
 export default function SharedQuiz() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function SharedQuiz() {
             setHasPlayed(playSnap.exists());
           }
         } else {
-          alert("Quiz not found");
+          toast.error("Quiz not found");
           router.push("/quiz");
         }
       };

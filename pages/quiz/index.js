@@ -13,6 +13,7 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import QuizPlayer from "../../components/QuizPlayer";
 import Navbar from "../../components/Navbar";
+import { toast } from "sonner";
 
 export default function QuizArena() {
   const [user, setUser] = useState(null);
@@ -67,7 +68,7 @@ export default function QuizArena() {
 
   const generateQuiz = async () => {
     if (!user) {
-      alert("Please log in to play");
+      toast.error("Please log in to play");
       return;
     }
     setLoading(true);
@@ -77,7 +78,7 @@ export default function QuizArena() {
       setQuizId(quizId);
       setQuiz(quiz);
     } catch (e) {
-      alert("Failed to generate quiz");
+      toast.error("Failed to generate quiz");
     } finally {
       setLoading(false);
     }

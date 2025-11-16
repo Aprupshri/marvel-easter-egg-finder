@@ -52,21 +52,20 @@ export default function Navbar() {
                   <span className="text-gray-300 text-sm">
                     {user.displayName || "Guest"}
                   </span>
-                  {user.isAnonymous ? (
+                  {user.isAnonymous && (
                     <button
                       onClick={openAuthModal}
                       className="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-medium px-3 py-1.5 rounded-md transition"
                     >
                       Save Progress
                     </button>
-                  ) : (
-                    <button
-                      onClick={() => setShowLogout(true)}
-                      className="text-red-400 hover:text-red-300 text-sm font-medium transition"
-                    >
-                      Logout
-                    </button>
                   )}
+                  <button
+                    onClick={() => setShowLogout(true)}
+                    className="text-red-400 hover:text-red-300 text-sm font-medium transition"
+                  >
+                    Logout
+                  </button>
                 </div>
               </>
             ) : (
