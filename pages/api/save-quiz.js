@@ -1,14 +1,15 @@
 // pages/api/save-quiz.js
 import { db } from "../../firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getMarvelName } from "../../utils/getMarvelName";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { quizId, score, userId, userName } = req.body;
-
+  let { quizId, score, userId, userName } = req.body;
+  console.log(quizId, score, userId, userName);
   if (!quizId || score === undefined || !userId) {
     return res.status(400).json({ error: "Missing required fields" });
   }
@@ -35,7 +36,7 @@ export default async function handler(req, res) {
       await setDoc(
         userRef,
         {
-          userName,
+          userName: getMarvelName(userData.userName || userName),
           totalScore: userData.totalScore + scoreToAdd,
           quizzes: [...userData.quizzes, quizId],
         },

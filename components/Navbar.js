@@ -29,7 +29,9 @@ export default function Navbar() {
               <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-black text-xl">M</span>
               </div>
-              <span className="text-white font-black text-xl hidden sm:block">Marvel Quiz Arena</span>
+              <span className="text-white font-black text-xl hidden sm:block">
+                Marvel Quiz Arena
+              </span>
             </Link>
           </div>
 
@@ -48,14 +50,14 @@ export default function Navbar() {
                   <span className="text-gray-300 text-sm">
                     {user.displayName || "Guest"}
                   </span>
-                  {!user.isAnonymous && (
-                    <button
-                      onClick={() => setShowLogout(true)}
-                      className="text-red-400 hover:text-red-300 text-sm font-medium transition"
-                    >
-                      Logout
-                    </button>
-                  )}
+                  {/* {!user.isAnonymous && ( */}
+                  <button
+                    onClick={() => setShowLogout(true)}
+                    className="text-red-400 hover:text-red-300 text-sm font-medium transition"
+                  >
+                    Logout
+                  </button>
+                  {/* )} */}
                 </div>
               </>
             ) : (
