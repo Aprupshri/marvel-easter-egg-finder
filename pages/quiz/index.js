@@ -14,6 +14,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import QuizPlayer from "../../components/QuizPlayer";
 import Navbar from "../../components/Navbar";
 import { toast } from "sonner";
+import { getMarvelName } from "../../utils/getMarvelName";
 
 export default function QuizArena() {
   const [user, setUser] = useState(null);
