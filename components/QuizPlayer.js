@@ -43,23 +43,24 @@ export default function QuizPlayer({
     if (onComplete) onComplete(correct);
   };
 
+  const completeUrl = window.location.origin + shareUrl;
   const shareOnTwitter = () => {
     const text = `I just scored ${score}/${quiz.length} on a Marvel Quiz! Can you beat me?`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
       text
-    )}&url=${encodeURIComponent(shareUrl)}`;
+    )}&url=${encodeURIComponent(completeUrl)}`;
     window.open(url, "_blank", "width=600,height=400");
   };
 
   const shareOnFacebook = () => {
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-      shareUrl
+      completeUrl
     )}`;
     window.open(url, "_blank", "width=600,height=400");
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
+    navigator.clipboard.writeText(completeUrl);
     toast.success("Link copied to clipboard!");
   };
 
@@ -70,9 +71,9 @@ export default function QuizPlayer({
           <span>
             Question {current + 1}/{quiz.length}
           </span>
-          <span>
+          {/* <span>
             Score: {answers.filter((a, i) => a === quiz[i].correct).length}
-          </span>
+          </span> */}
         </div>
         <h3 className="text-xl font-bold text-blue-300 mb-6">
           {quiz[current].question}
