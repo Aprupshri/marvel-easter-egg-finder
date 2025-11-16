@@ -54,13 +54,12 @@ export default function QuizArena() {
     );
     const snap = await getDocs(q);
     const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    console.log(data);
     const enriched = await Promise.all(
       data.map(async (entry) => {
         if (entry.id === "anonymous") return { ...entry, name: "Anonymous" };
         const userDoc = await getDoc(doc(db, "users", entry.id));
-        console.log(userDoc.data())
-        return { ...entry, name: userDoc.data()?.userName || "Unknown" };
+        const rawName = userDoc.data()?.userName || "Unknown";
+        return { ...entry, name: getMarvelName(rawName) };
       })
     );
     setQuizLeaderboard(enriched);
@@ -172,7 +171,7 @@ export default function QuizArena() {
               {globalLeaderboard.map((u, i) => (
                 <div key={u.id} className="flex justify-between text-white">
                   <span>
-                    {i + 1}. {u.userName != "Guest" ? u.userName : "Anonymous"}
+                    {i + 1}. {u.userName}
                   </span>
                   <span className="font-bold">{u.totalScore} pts</span>
                 </div>

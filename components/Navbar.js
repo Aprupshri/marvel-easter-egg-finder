@@ -20,6 +20,10 @@ export default function Navbar() {
     setShowLogout(false);
   };
 
+  const openAuthModal = () => {
+    setShowAuth(true);
+  };
+
   return (
     <nav className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -38,31 +42,36 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {user ? (
               <>
-                {!user.isAnonymous && (
-                  <Link
-                    href="/profile"
-                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition"
-                  >
-                    History
-                  </Link>
-                )}
+                <Link
+                  href="/profile"
+                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition"
+                >
+                  History
+                </Link>
                 <div className="flex items-center space-x-3">
                   <span className="text-gray-300 text-sm">
                     {user.displayName || "Guest"}
                   </span>
-                  {/* {!user.isAnonymous && ( */}
-                  <button
-                    onClick={() => setShowLogout(true)}
-                    className="text-red-400 hover:text-red-300 text-sm font-medium transition"
-                  >
-                    Logout
-                  </button>
-                  {/* )} */}
+                  {user.isAnonymous ? (
+                    <button
+                      onClick={openAuthModal}
+                      className="bg-yellow-600 hover:bg-yellow-500 text-white text-sm font-medium px-3 py-1.5 rounded-md transition"
+                    >
+                      Save Progress
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowLogout(true)}
+                      className="text-red-400 hover:text-red-300 text-sm font-medium transition"
+                    >
+                      Logout
+                    </button>
+                  )}
                 </div>
               </>
             ) : (
               <button
-                onClick={() => setShowAuth(true)}
+                onClick={openAuthModal}
                 className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium transition"
               >
                 Login
