@@ -4,12 +4,12 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 const FUNNY_MESSAGES = {
-  0: "Zero? Did you even *try*? The MCU is calling — and it wants its popcorn back!",
-  1: "One point? That's not a score, that's a participation sticker. Go rewatch *Iron Man* and try again.",
+  0: "Zero? Did you even try? The MCU is calling — and it wants its popcorn back!",
+  1: "One point? That's not a score, that's a participation sticker. Go rewatch Iron Man and try again.",
   2: "Two out of five? You're basically the MCU's version of a background character in a crowd scene.",
   3: "Three correct? Not bad — you're officially promoted from 'random civilian' to 'S.H.I.E.L.D. intern'.",
   4: "Four out of five? So close! You're one question away from being invited to the Avengers compound.",
-  5: "PERFECT SCORE! You're not a fan — you're a *walking Marvel wiki*. Even Kevin Feige is taking notes.",
+  5: "PERFECT SCORE! You're not a fan — you're a walking Marvel wiki. Even Kevin Feige is taking notes.",
 };
 
 export default function QuizPlayer({
