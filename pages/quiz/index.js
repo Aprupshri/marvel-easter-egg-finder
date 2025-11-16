@@ -16,6 +16,16 @@ import Navbar from "../../components/Navbar";
 import { toast } from "sonner";
 import { getMarvelName } from "../../utils/getMarvelName";
 
+const LOADING_MESSAGES = [
+  "Thanos is snapping... quiz incoming!",
+  "Activating the Infinity Stones of Knowledge...",
+  "Wong is opening a portal to new questions...",
+  "Charging the Stark Reactor...",
+  "Doctor Strange is browsing timelines for the best quiz...",
+  "Hulk is smashing the generate button...",
+  "Web-slinging fresh questions your way!",
+  "Assembling the Avengers of Trivia...",
+];
 export default function QuizArena() {
   const [user, setUser] = useState(null);
   const [quiz, setQuiz] = useState(null);
@@ -23,7 +33,9 @@ export default function QuizArena() {
   const [loading, setLoading] = useState(false);
   const [globalLeaderboard, setGlobalLeaderboard] = useState([]);
   const [quizLeaderboard, setQuizLeaderboard] = useState([]);
-
+  const [loadingMessage, setLoadingMessage] = useState(
+    Math.floor(Math.random() * LOADING_MESSAGES.length)
+  );
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setUser);
     return () => unsub();
@@ -36,6 +48,18 @@ export default function QuizArena() {
   useEffect(() => {
     if (quizId) fetchQuizLeaderboard();
   }, [quizId]);
+
+  useEffect(() => {
+    if (loading) {
+      const interval = setInterval(() => {
+        setLoadingMessage((prev) =>
+          prev + 1 < LOADING_MESSAGES.length ? prev + 1 : 0
+        );
+      }, 1500);
+
+      return () => clearInterval(interval);
+    }
+  }, [loading]);
 
   const fetchGlobalLeaderboard = async () => {
     const q = query(
@@ -67,23 +91,37 @@ export default function QuizArena() {
     setQuizLeaderboard(enriched);
   };
 
-  const generateQuiz = async () => {
-    if (!user) {
-      toast.error("Please log in to play");
-      return;
+ // pages/quiz/index.js (update generateQuiz function)
+const generateQuiz = async () => {
+  if (!user) {
+    toast.error("Please log in to play");
+    return;
+  }
+  setLoading(true);
+  try {
+    const idToken = await user.getIdToken();
+    const res = await fetch("/api/generate-quiz", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    setQuizId(data.quizId);
+    setQuiz(data.quiz);
+    // Mark as played locally (optional UI feedback)
+    if (!data.reused) {
+      toast.success("Fresh quiz generated!");
     }
-    setLoading(true);
-    try {
-      const res = await fetch("/api/generate-quiz", { method: "POST" });
-      const { quiz, quizId } = await res.json();
-      setQuizId(quizId);
-      setQuiz(quiz);
-    } catch (e) {
-      toast.error("Failed to generate quiz");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (e) {
+    toast.error("Failed to load quiz");
+    console.error(e);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleQuizComplete = async (score) => {
     if (!user || !quizId) return;
@@ -129,9 +167,32 @@ export default function QuizArena() {
                 <button
                   onClick={generateQuiz}
                   disabled={loading}
-                  className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl text-xl btn-glow"
+                  className="bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-500 hover:to-blue-500 text-white font-bold py-4 px-8 rounded-xl text-xl btn-glow shadow-lg transition-all duration-300 transform hover:scale-105"
                 >
-                  {loading ? "Generating..." : "Generate Quiz"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
+                      </svg>
+
+                      {LOADING_MESSAGES[loadingMessage]}
+                    </span>
+                  ) : (
+                    "Summon a New Quiz!"
+                  )}
                 </button>
               </div>
             ) : (

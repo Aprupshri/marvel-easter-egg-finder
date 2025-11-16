@@ -37,7 +37,9 @@ export default async function handler(req, res) {
         {
           userName: getMarvelName(userData.userName || userName),
           totalScore: userData.totalScore + scoreToAdd,
-          quizzes: Array.isArray(userData.quizzes) ? [...userData.quizzes, quizId] : [quizId],
+          quizzes: Array.isArray(userData.quizzes)
+            ? [...userData.quizzes, quizId]
+            : [quizId],
         },
         { merge: true }
       );
