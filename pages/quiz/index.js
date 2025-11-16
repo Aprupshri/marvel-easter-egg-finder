@@ -114,70 +114,72 @@ export default function QuizArena() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 to-blue-900 p-4">
-        <div className="max-w-4xl mx-auto pt-20">
-          <header className="text-center mb-8">
-            <h1 className="text-5xl font-black text-white">
-              Marvel Quiz Arena
-            </h1>
-            <p className="text-blue-200 mt-2">Test your MCU knowledge!</p>
-          </header>
+      <div className="quiz-bg">
+        <div className="min-h-screen p-4 backdrop-blur-sm">
+          <div className="max-w-4xl mx-auto pt-20">
+            <header className="text-center mb-8">
+              <h1 className="text-5xl font-black text-white">
+                Marvel Quiz Arena
+              </h1>
+              <p className="text-blue-200 mt-2">Test your MCU knowledge!</p>
+            </header>
 
-          {!quiz ? (
-            <div className="text-center">
-              <button
-                onClick={generateQuiz}
-                disabled={loading}
-                className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl text-xl btn-glow"
-              >
-                {loading ? "Generating..." : "Generate Quiz"}
-              </button>
-            </div>
-          ) : (
-            <>
-              <QuizPlayer
-                quiz={quiz}
-                onComplete={handleQuizComplete}
-                clearQuiz={clearQuiz}
-                shareUrl={`/quiz/${quizId}`}
-              />
+            {!quiz ? (
+              <div className="text-center">
+                <button
+                  onClick={generateQuiz}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded-xl text-xl btn-glow"
+                >
+                  {loading ? "Generating..." : "Generate Quiz"}
+                </button>
+              </div>
+            ) : (
+              <>
+                <QuizPlayer
+                  quiz={quiz}
+                  onComplete={handleQuizComplete}
+                  clearQuiz={clearQuiz}
+                  shareUrl={`/quiz/${quizId}`}
+                />
 
-              {quizLeaderboard.length > 0 && (
-                <div className="mt-12 bg-gray-800 rounded-xl p-6">
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    This Quiz Leaderboard
-                  </h3>
-                  <div className="space-y-2">
-                    {quizLeaderboard.map((u, i) => (
-                      <div
-                        key={u.id}
-                        className="flex justify-between text-white"
-                      >
-                        <span>
-                          {i + 1}. {u.name}
-                        </span>
-                        <span className="font-bold">{u.score} pts</span>
-                      </div>
-                    ))}
+                {quizLeaderboard.length > 0 && (
+                  <div className="mt-12 bg-gray-800 rounded-xl p-6">
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      This Quiz Leaderboard
+                    </h3>
+                    <div className="space-y-2">
+                      {quizLeaderboard.map((u, i) => (
+                        <div
+                          key={u.id}
+                          className="flex justify-between text-white"
+                        >
+                          <span>
+                            {i + 1}. {u.name}
+                          </span>
+                          <span className="font-bold">{u.score} pts</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
 
-          <div className="mt-12 bg-gray-800 rounded-xl p-6">
-            <h3 className="text-2xl font-bold text-white mb-4">
-              Global Leaderboard
-            </h3>
-            <div className="space-y-2">
-              {globalLeaderboard.map((u, i) => (
-                <div key={u.id} className="flex justify-between text-white">
-                  <span>
-                    {i + 1}. {u.userName}
-                  </span>
-                  <span className="font-bold">{u.totalScore} pts</span>
-                </div>
-              ))}
+            <div className="mt-12 bg-gray-800 rounded-xl p-6">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Global Leaderboard
+              </h3>
+              <div className="space-y-2">
+                {globalLeaderboard.map((u, i) => (
+                  <div key={u.id} className="flex justify-between text-white">
+                    <span>
+                      {i + 1}. {u.userName}
+                    </span>
+                    <span className="font-bold">{u.totalScore} pts</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

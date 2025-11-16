@@ -63,9 +63,9 @@ export default function SharedQuiz() {
       limit(10)
     );
     const snap = await getDocs(q);
-    
+
     const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-    console.log(data)
+    console.log(data);
     const enriched = await Promise.all(
       data.map(async (entry) => {
         if (entry.id === "anonymous") return { ...entry, name: "Anonymous" };
@@ -100,8 +100,10 @@ export default function SharedQuiz() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 to-blue-900 flex items-center justify-center">
-          <div className="text-white text-xl">Loading quiz...</div>
+        <div className="quiz-bg">
+          <div className="min-h-screen p-4 backdrop-blur-sm">
+            <div className="text-white text-xl">Loading quiz...</div>
+          </div>
         </div>
       </>
     );
@@ -110,49 +112,51 @@ export default function SharedQuiz() {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 to-blue-900 p-4">
-        <div className="max-w-2xl mx-auto pt-20">
-          <header className="text-center mb-8">
-            <h1 className="text-4xl font-black text-white">
-              Shared Quiz Challenge
-            </h1>
-            <p className="text-blue-200 mt-2">
-              Best score: {quizData.score || 0}/{quizData.quiz.length}
-            </p>
-            {user && !user.isAnonymous && hasPlayed && (
-              <p className="text-yellow-400 mt-2">
-                You've already played this quiz!
+      <div className="quiz-bg">
+        <div className="min-h-screen p-4 backdrop-blur-sm">
+          <div className="max-w-2xl mx-auto pt-20">
+            <header className="text-center mb-8">
+              <h1 className="text-4xl font-black text-white">
+                Shared Quiz Challenge
+              </h1>
+              <p className="text-blue-200 mt-2">
+                Best score: {quizData.score || 0}/{quizData.quiz.length}
               </p>
-            )}
-          </header>
-
-          <QuizPlayer
-            quiz={quizData.quiz}
-            initialScore={quizData.score || 0}
-            isShared={true}
-            onComplete={handleQuizComplete}
-            shareUrl={"/quiz/" + id}
-          />
-
-          <div className="mt-12 bg-gray-800 rounded-xl p-6">
-            <h3 className="text-2xl font-bold text-white mb-4">
-              Quiz Leaderboard
-            </h3>
-            <div className="space-y-2">
-              {leaderboard.length === 0 ? (
-                <p className="text-gray-400 text-center">
-                  No scores yet. Be the first!
+              {user && !user.isAnonymous && hasPlayed && (
+                <p className="text-yellow-400 mt-2">
+                  You've already played this quiz!
                 </p>
-              ) : (
-                leaderboard.map((u, i) => (
-                  <div key={u.id} className="flex justify-between text-white">
-                    <span>
-                      {i + 1}. {u.name}
-                    </span>
-                    <span className="font-bold">{u.score} pts</span>
-                  </div>
-                ))
               )}
+            </header>
+
+            <QuizPlayer
+              quiz={quizData.quiz}
+              initialScore={quizData.score || 0}
+              isShared={true}
+              onComplete={handleQuizComplete}
+              shareUrl={"/quiz/" + id}
+            />
+
+            <div className="mt-12 bg-gray-800 rounded-xl p-6">
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Quiz Leaderboard
+              </h3>
+              <div className="space-y-2">
+                {leaderboard.length === 0 ? (
+                  <p className="text-gray-400 text-center">
+                    No scores yet. Be the first!
+                  </p>
+                ) : (
+                  leaderboard.map((u, i) => (
+                    <div key={u.id} className="flex justify-between text-white">
+                      <span>
+                        {i + 1}. {u.name}
+                      </span>
+                      <span className="font-bold">{u.score} pts</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
