@@ -1,13 +1,13 @@
 # 📁 marvel-easter-egg-finder - Project Structure
 
-*Generated on: 11/14/2025, 2:56:36 PM*
+*Generated on: 11/16/2025, 9:25:59 PM*
 
 ## 📋 Quick Overview
 
 | Metric | Value |
 |--------|-------|
-| 📄 Total Files | 10 |
-| 📁 Total Folders | 3 |
+| 📄 Total Files | 23 |
+| 📁 Total Folders | 9 |
 | 🌳 Max Depth | 2 levels |
 | 🛠️ Tech Stack | CSS, Tailwind CSS, Node.js |
 
@@ -23,53 +23,75 @@
 
 ### By File Type
 
-- 📜 **.js** (JavaScript files): 5 files (50.0%)
-- ⚙️ **.json** (JSON files): 2 files (20.0%)
-- 🚫 **.gitignore** (Git ignore): 1 files (10.0%)
-- 📖 **.md** (Markdown files): 1 files (10.0%)
-- 🎨 **.css** (Stylesheets): 1 files (10.0%)
+- 📜 **.js** (JavaScript files): 15 files (65.2%)
+- ⚙️ **.json** (JSON files): 3 files (13.0%)
+- 📖 **.md** (Markdown files): 2 files (8.7%)
+- 🚫 **.gitignore** (Git ignore): 1 files (4.3%)
+- 🖼️ **.png** (PNG images): 1 files (4.3%)
+- 🎨 **.css** (Stylesheets): 1 files (4.3%)
 
 ### By Category
 
-- **JavaScript**: 5 files (50.0%)
-- **Config**: 2 files (20.0%)
-- **DevOps**: 1 files (10.0%)
-- **Docs**: 1 files (10.0%)
-- **Styles**: 1 files (10.0%)
+- **JavaScript**: 15 files (65.2%)
+- **Config**: 3 files (13.0%)
+- **Docs**: 2 files (8.7%)
+- **DevOps**: 1 files (4.3%)
+- **Assets**: 1 files (4.3%)
+- **Styles**: 1 files (4.3%)
 
 ### 📁 Largest Directories
 
-- **root**: 10 files
-- **pages**: 3 files
-- **pages\api**: 1 files
-- **styles**: 1 files
+- **root**: 23 files
+- **pages**: 8 files
+- **components**: 3 files
+- **pages\api**: 3 files
+- **pages\quiz**: 2 files
 
 ## 🌳 Directory Structure
 
 ```
 marvel-easter-egg-finder/
 ├── 🟡 🚫 **.gitignore**
+├── 🧩 components/
+│   ├── 📜 AuthModal.js
+│   ├── 📜 Navbar.js
+│   └── 📜 QuizPlayer.js
+├── 📜 firebase.js
 ├── 🟡 🔒 **package-lock.json**
 ├── 🔴 📦 **package.json**
 ├── 📄 pages/
 │   ├── 📜 _app.js
 │   ├── 🔌 api/
-│   │   └── 📜 generate-egg.js
-│   └── 📜 index.js
+│   │   ├── 📜 generate-egg.js
+│   │   ├── 📜 generate-quiz.js
+│   │   └── 📜 save-quiz.js
+│   ├── 📜 index.js
+│   ├── 📂 profile/
+│   │   └── 📜 index.js
+│   └── 📂 quiz/
+│   │   ├── 📜 [id].js
+│   │   └── 📜 index.js
 ├── 📜 postcss.config.js
+├── 📖 project_structure.md
+├── 🌐 public/
+│   └── 🖼️ images/
+│   │   └── 🖼️ quiz-bg.png
 ├── 🔴 📖 **README.md**
 ├── 🎨 styles/
 │   └── 🎨 globals.css
-└── 🟡 🎨 **tailwind.config.js**
+├── 🟡 🎨 **tailwind.config.js**
+└── 🔧 utils/
+│   └── 📜 getMarvelName.js
 ```
 
 ## 📖 Legend
 
 ### File Types
 - 🚫 DevOps: Git ignore
-- ⚙️ Config: JSON files
 - 📜 JavaScript: JavaScript files
+- ⚙️ Config: JSON files
 - 📖 Docs: Markdown files
+- 🖼️ Assets: PNG images
 - 🎨 Styles: Stylesheets
 
 ### Importance Levels

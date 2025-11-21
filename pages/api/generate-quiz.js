@@ -107,7 +107,7 @@ Return ONLY the JSON array of 5 questions, no markdown, no extra text.
 IMPORTANT: NONE of these questions can be similar to or repeat any of the following used questions:
 ${excludeList.map((q, i) => `${i + 1}. "${q}"`).join("\n") || "None yet."}
 
-Make questions moderately difficult — avoid overly easy ones.`,
+Make questions moderate — avoid overly easy ones, The answers must be verifiable. `,
           },
         ],
       },
@@ -115,7 +115,7 @@ Make questions moderately difficult — avoid overly easy ones.`,
     systemInstruction: {
       parts: [
         {
-          text: `You are a Marvel Cinematic Universe trivia expert. Create exactly 5 unique, moderately difficult multiple-choice questions. Each must have exactly 4 options and one correct answer.
+          text: `You are a Marvel Cinematic Universe trivia expert. Create exactly 5 unique, multiple-choice questions. Each must have exactly 4 options and one correct answer.
 
 CRITICAL: Do NOT repeat or rephrase any question from the used list.
 
@@ -177,7 +177,7 @@ export default async function handler(req, res) {
 
   // const idToken = authHeader.split("Bearer ")[1];
 
-  let {userId} = req.body;
+  let { userId } = req.body;
   // try {
   //   const decoded = await adminAuth.verifyIdToken(idToken);
   //   userId = decoded.uid;

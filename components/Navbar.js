@@ -1,4 +1,3 @@
-// components/Navbar.js
 import { useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -28,7 +27,7 @@ export default function Navbar() {
     <nav className="bg-gray-900 border-b border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
+          <div className="flex items-center space-x-8">
             <Link href="/quiz" className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-black text-xl">M</span>
@@ -36,6 +35,14 @@ export default function Navbar() {
               <span className="text-white font-black text-xl hidden sm:block">
                 Marvel Quiz Arena
               </span>
+            </Link>
+
+            {/* Easter Egg Finder link */}
+            <Link
+              href="/easter"
+              className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition hidden sm:block"
+            >
+              Easter Egg Finder
             </Link>
           </div>
 
