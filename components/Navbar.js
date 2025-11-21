@@ -8,7 +8,6 @@ export default function Navbar() {
   const [user, setUser] = useState(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, setUser);
     return () => unsub();
@@ -28,7 +27,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/quiz" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <div className="w-10 h-10 bg-gradient-to-br from-red-600 to-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-black text-xl">M</span>
               </div>
